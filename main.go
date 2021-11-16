@@ -59,11 +59,12 @@ func hydrateClient(client *unifi.Client, switchmap map[string]*unifi.USW, apmap 
 func clientTable(clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap map[string]*unifi.UAP) {
 	const padding = 3
 	w := tabwriter.NewWriter(os.Stdout, 10, 0, padding, ' ', 0)
-	fmt.Fprintln(w, "Mac\tIP\tHostname\tName\tSwitch\tPort\tAP\tRSSI\tNote\t")
+	fmt.Fprintln(w, "Mac\tIP\tHostname\tName\tNetwork\tSwitch\tPort\tAP\tRSSI\tNote\t")
 	for _, client := range clients {
 		hydrateClient(client, switchmap, apmap)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t\n",
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t\n",
 			client.Mac, client.IP, client.Hostname, client.Name,
+			client.Network,
 			client.SwName, &client.SwPort,
 			client.ApName, client.Rssi,
 			client.Note)
@@ -79,11 +80,12 @@ func clientExcel(clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap
 	f.SetCellValue(sname, "B1", "IP")
 	f.SetCellValue(sname, "C1", "Hostname")
 	f.SetCellValue(sname, "D1", "Name")
-	f.SetCellValue(sname, "E1", "Switch")
-	f.SetCellValue(sname, "F1", "Port")
-	f.SetCellValue(sname, "G1", "AP")
-	f.SetCellValue(sname, "H1", "RSSI")
-	f.SetCellValue(sname, "I1", "Note")
+	f.SetCellValue(sname, "E1", "Network")
+	f.SetCellValue(sname, "F1", "Switch")
+	f.SetCellValue(sname, "G1", "Port")
+	f.SetCellValue(sname, "H1", "AP")
+	f.SetCellValue(sname, "I1", "RSSI")
+	f.SetCellValue(sname, "J1", "Note")
 	row := 2
 	for _, client := range clients {
 		hydrateClient(client, switchmap, apmap)
@@ -91,11 +93,12 @@ func clientExcel(clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap
 		f.SetCellValue(sname, fmt.Sprintf("B%d", row), client.IP)
 		f.SetCellValue(sname, fmt.Sprintf("C%d", row), client.Hostname)
 		f.SetCellValue(sname, fmt.Sprintf("D%d", row), client.Name)
-		f.SetCellValue(sname, fmt.Sprintf("E%d", row), client.SwName)
-		f.SetCellValue(sname, fmt.Sprintf("F%d", row), client.SwPort.Val)
-		f.SetCellValue(sname, fmt.Sprintf("G%d", row), client.ApName)
-		f.SetCellValue(sname, fmt.Sprintf("H%d", row), client.Rssi)
-		f.SetCellValue(sname, fmt.Sprintf("I%d", row), client.Note)
+		f.SetCellValue(sname, fmt.Sprintf("G%d", row), client.Network)
+		f.SetCellValue(sname, fmt.Sprintf("F%d", row), client.SwName)
+		f.SetCellValue(sname, fmt.Sprintf("G%d", row), client.SwPort.Val)
+		f.SetCellValue(sname, fmt.Sprintf("H%d", row), client.ApName)
+		f.SetCellValue(sname, fmt.Sprintf("I%d", row), client.Rssi)
+		f.SetCellValue(sname, fmt.Sprintf("J%d", row), client.Note)
 
 		// fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t\n",
 		// 	client.Mac, client.IP, client.Hostname, client.Name,
@@ -110,23 +113,23 @@ func clientExcel(clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap
 }
 
 func clientCsv(clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap map[string]*unifi.UAP) {
-	const padding = 3
 	f, err := os.Create(outputFlag)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer f.Close()
 	w := csv.NewWriter(f)
-	record := make([]string, 9)
+	record := make([]string, 10)
 	record[0] = "MAC"
 	record[1] = "IP"
 	record[2] = "Hostname"
 	record[3] = "Name"
-	record[4] = "Switch"
-	record[5] = "Port"
-	record[6] = "AP"
-	record[7] = "RSSI"
-	record[8] = "Note"
+	record[4] = "Network"
+	record[5] = "Switch"
+	record[6] = "Port"
+	record[7] = "AP"
+	record[8] = "RSSI"
+	record[9] = "Note"
 	if err := w.Write(record); err != nil {
 		log.Fatalln(err)
 	}
@@ -134,6 +137,7 @@ func clientCsv(clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap m
 		hydrateClient(client, switchmap, apmap)
 		w.Write([]string{
 			client.Mac, client.IP, client.Hostname, client.Name,
+			client.Network,
 			client.SwName, client.SwPort.Txt,
 			client.ApName, fmt.Sprintf("%d", client.Rssi),
 			client.Note,
