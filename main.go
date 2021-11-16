@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"text/tabwriter"
 
 	"github.com/unpoller/unifi"
@@ -19,6 +20,7 @@ var outputFlag string
 var urlFlag string
 var usernameFlag string
 var passwordFlag string
+var sortFlag bool
 
 func init() {
 	flag.StringVar(&outputFlag, "output", "", "filename to output to. [*.xlsx, *.json, *.csv]")
@@ -26,6 +28,7 @@ func init() {
 	flag.StringVar(&urlFlag, "host", "https://unifi.lcl.kapi.se", "host address for controller")
 	flag.StringVar(&usernameFlag, "u", "", "Username (default is a secret)")
 	flag.StringVar(&passwordFlag, "p", "", "Password (default is a secret)")
+	flag.BoolVar(&sortFlag, "sort", false, "sort my MAC")
 }
 
 func connect(user, pass, url string) (*unifi.Unifi, error) {
@@ -179,6 +182,11 @@ func main() {
 
 	// log.Println(len(sites), "Unifi Sites Found: ", sites)
 	// log.Println(len(clients), "Clients connected:")
+	if sortFlag {
+		sort.SliceStable(clients, func(i, j int) bool {
+			return clients[i].Mac < clients[j].Mac
+		})
+	}
 
 	if outputFlag == "" {
 		clientTable(clients, switchmap, apmap)
