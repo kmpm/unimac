@@ -1,9 +1,9 @@
 
-
+.PHONY: build
 build:
 	go build ./
 
-install:
+install: unimac.exe
 	copy unimac.exe c:\local\bin
 
 unimac.exe: build
@@ -11,10 +11,12 @@ unimac.exe: build
 clean:
 	-del unimac.exe
 	-del clients.csv
+	-del devices.csv
 
-clients: unimac.exe
-	unimac.exe -o clients.csv clients
+
+clients:
+	go run ./ clients -output clients.csv
 
 
 devices:
-	go run ./ devices
+	go run ./ devices -output devices.csv
