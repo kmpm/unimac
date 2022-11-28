@@ -33,7 +33,6 @@ func main() {
 	flag.Parse()
 
 	args := flag.Args()
-	fmt.Println("asdfsadf:", args)
 
 	switch args[0] {
 	case "devices":
