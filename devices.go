@@ -10,11 +10,12 @@ import (
 	"text/tabwriter"
 
 	"github.com/unpoller/unifi"
+	"github.com/xuri/excelize/v2"
 )
 
 var (
 	devicesCmd       = flag.NewFlagSet("devices", flag.ExitOnError)
-	deviceOutputFlag = devicesCmd.String("output", "", "filename to output to. [*.csv]")
+	deviceOutputFlag = devicesCmd.String("output", "", "filename to output to. [*.xlsx, *.json, *.csv]")
 )
 
 type DevicePort struct {
@@ -149,6 +150,8 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 			}
 		case ".csv":
 			devicesCsv(devices, *deviceOutputFlag)
+		case ".xlsx":
+			devicesExcel(devices, *deviceOutputFlag)
 		default:
 			log.Fatalf("unsupported extension for %s", *deviceOutputFlag)
 		}
@@ -206,4 +209,36 @@ func devicesCsv(devices []*Device, filename string) {
 		})
 	}
 	w.Flush()
+}
+
+func devicesExcel(devices []*Device, filename string) {
+	f := excelize.NewFile()
+	sname := f.GetSheetName(0)
+	f.SetCellValue(sname, "A1", "MAC")
+	f.SetCellValue(sname, "B1", "Type")
+	f.SetCellValue(sname, "C1", "Site")
+	f.SetCellValue(sname, "D1", "IP")
+	f.SetCellValue(sname, "E1", "Name")
+	f.SetCellValue(sname, "F1", "Network")
+	f.SetCellValue(sname, "G1", "Uplink")
+	f.SetCellValue(sname, "H1", "Port")
+	f.SetCellValue(sname, "I1", "TBD")
+	f.SetCellValue(sname, "J1", "Note")
+	row := 2
+	for _, d := range devices {
+		f.SetCellValue(sname, fmt.Sprintf("A%d", row), d.Mac)
+		f.SetCellValue(sname, fmt.Sprintf("B%d", row), d.Type)
+		f.SetCellValue(sname, fmt.Sprintf("C%d", row), d.Site)
+		f.SetCellValue(sname, fmt.Sprintf("D%d", row), d.IP)
+		f.SetCellValue(sname, fmt.Sprintf("E%d", row), d.Name)
+		f.SetCellValue(sname, fmt.Sprintf("F%d", row), "")
+		f.SetCellValue(sname, fmt.Sprintf("G%d", row), d.Uplink.Displayname())
+		f.SetCellValue(sname, fmt.Sprintf("H%d", row), d.Uplink.Port)
+		f.SetCellValue(sname, fmt.Sprintf("I%d", row), "")
+		f.SetCellValue(sname, fmt.Sprintf("J%d", row), d.Note)
+		row++
+	}
+	if err := f.SaveAs(*deviceOutputFlag); err != nil {
+		log.Println(err)
+	}
 }
