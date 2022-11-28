@@ -58,6 +58,10 @@ func main() {
 		uni, sites := mustConnect()
 		clientsCmd.Parse(args[1:])
 		generateClients(uni, sites)
+	case "version":
+		versionRun(args[1:])
+	case "licenses":
+		licensesRun(args[1:])
 	default:
 		log.Fatalf("[ERROR] unkown command '%s'", args[0])
 	}
