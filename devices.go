@@ -142,6 +142,11 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 	} else {
 		ext := filepath.Ext(*deviceOutputFlag)
 		switch ext {
+		case ".json":
+			err := writeJSON(devices, *deviceOutputFlag)
+			if err != nil {
+				log.Fatalf("error writing '%s': %v", *deviceOutputFlag, err)
+			}
 		case ".csv":
 			devicesCsv(devices, *deviceOutputFlag)
 		default:

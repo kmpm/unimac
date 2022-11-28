@@ -2,10 +2,8 @@ package main
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -60,12 +58,14 @@ func generateClients(uni *unifi.Unifi, sites []*unifi.Site) {
 		case ".xlsx":
 			clientExcel(clients, switchmap, apmap)
 		case ".json":
-			file, _ := json.MarshalIndent(clients, "", "    ")
-			_ = ioutil.WriteFile(*outputFlag, file, 0644)
+			err := writeJSON(clients, *outputFlag)
+			if err != nil {
+				log.Fatalf("error writing '%s': %v", *outputFlag, err)
+			}
 		case ".csv":
 			clientCsv(clients, switchmap, apmap)
 		default:
-			log.Fatalf("unsupported extension for %s", outputFlag)
+			log.Fatalf("unsupported extension for %s", *outputFlag)
 		}
 	}
 }
