@@ -9,8 +9,12 @@ import (
 	"github.com/unpoller/unifi"
 )
 
+const (
+	DefaultHost = "https://unifi"
+)
+
 var (
-	urlFlag      = flag.String("host", "https://unifi.lcl.kapi.se", "host address for controller")
+	hostFlag     = flag.String("h", DefaultHost, "host address for controller")
 	usernameFlag = flag.String("u", "", "Username (default is a secret)")
 	passwordFlag = flag.String("p", "", "Password (default is a secret)")
 )
@@ -33,6 +37,16 @@ func main() {
 	flag.Parse()
 
 	args := flag.Args()
+	if *usernameFlag == "" {
+		*usernameFlag = os.Getenv("UNIMAC_USER")
+	}
+	if *passwordFlag == "" {
+		*passwordFlag = os.Getenv("UNIMAC_PASSWORD")
+	}
+	hostEnv := os.Getenv("UNIMAC_HOST")
+	if hostEnv != "" && (*hostFlag == "" || *hostFlag == DefaultHost) {
+		*hostFlag = hostEnv
+	}
 
 	switch args[0] {
 	case "devices":
@@ -50,17 +64,12 @@ func main() {
 }
 
 func mustConnect() (*unifi.Unifi, []*unifi.Site) {
-	if *usernameFlag == "" {
-		*usernameFlag = os.Getenv("UNIMAC_USER")
-	}
-	if *passwordFlag == "" {
-		*passwordFlag = os.Getenv("UNIMAC_PASSWORD")
-	}
-	uni, err := connect(*usernameFlag, *passwordFlag, *urlFlag)
+
+	uni, err := connect(*usernameFlag, *passwordFlag, *hostFlag)
 	if err != nil {
 		log.Fatalln("Error:", err)
 	}
-	fmt.Println("Connected to ", *urlFlag)
+	fmt.Println("Connected to ", *hostFlag)
 
 	sites, err := uni.GetSites()
 	if err != nil {
