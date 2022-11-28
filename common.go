@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
 func writeJSON(data any, filename string) error {
@@ -10,5 +10,5 @@ func writeJSON(data any, filename string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filename, file, 0644)
+	return os.WriteFile(filename, file, 0644)
 }
