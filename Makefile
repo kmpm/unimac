@@ -12,11 +12,12 @@ OUTPUT:=unimac$(BINEXT)
 GIT_VERSION?=$(shell git describe --tags --always --long --dirty)
 LDFLAGS:="-X 'main.appVersion=$(GIT_VERSION)'"
 BUILDFLAGS:=-ldflags $(LDFLAGS)
+RELEASEFILE=$(call FixPath,out/unimac_$(GIT_VERSION)$(BINEXT))
 
 .PHONY: build
 build: out
 	go build $(BUILDFLAGS) -o $(OUTPUT) ./
-	$(call cp,$(OUTPUT),out/$(GIT_VERSION)-$(OUTPUT))
+	$(call cp,$(OUTPUT),$(RELEASEFILE))
 
 out:
 	mkdir out
