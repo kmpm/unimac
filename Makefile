@@ -41,3 +41,6 @@ devices:
 clean:
 	-del $(OUTPUT)
 	
+today: out
+	go run ./ clients -output out/today/clients.csv
+	go run ./ devices -output out/today/devices.csv
