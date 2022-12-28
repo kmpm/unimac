@@ -37,13 +37,14 @@ func (me *DevicePort) Displayname() string {
 }
 
 type Device struct {
-	Mac    string
-	Name   string
-	Type   string
-	Site   string
-	IP     string
-	Uplink DevicePort
-	Note   string
+	Mac           string
+	Name          string
+	Type          string
+	Site          string
+	IP            string
+	Uplink        *DevicePort
+	Note          string
+	ConfigNetwork *unifi.ConfigNetwork
 }
 
 func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
@@ -52,19 +53,19 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 		log.Fatalln("Error:", err)
 	}
 
-	clients, err := uni.GetClients(sites)
-	if err != nil {
-		log.Fatalln("Error getting clients:", err)
-	}
+	// clients, err := uni.GetClients(sites)
+	// if err != nil {
+	// 	log.Fatalln("Error getting clients:", err)
+	// }
 
 	switchmap := make(map[string]*unifi.USW)
-	dlmap := make(map[string]DevicePort)
+	dlmap := make(map[string]*DevicePort)
 	for _, sw := range unifidevices.USWs {
 		switchmap[sw.Mac] = sw
 		// fmt.Println("sw: ", sw.Mac)
 		for _, dl := range sw.DownlinkTable {
 			// fmt.Printf("\t %s, %s\n", dl.Mac, dl.PortIdx.String())
-			dlmap[dl.Mac] = DevicePort{Mac: sw.Mac, Name: sw.Name, Port: dl.PortIdx.String()}
+			dlmap[dl.Mac] = &DevicePort{Mac: sw.Mac, Name: sw.Name, Port: dl.PortIdx.String()}
 		}
 	}
 
@@ -77,61 +78,73 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 	// for _, sg := range devices.USGs {
 	// 	gwmap[sg.Mac] = sg
 	// }
-	clientmap := make(map[string]*unifi.Client)
-	for _, cl := range clients {
-		clientmap[cl.Mac] = cl
-	}
+	// clientmap := make(map[string]*unifi.Client)
+	// for _, cl := range clients {
+	// 	clientmap[cl.Mac] = cl
+	// }
 
+	fmt.Printf("\t with %d USGs", len(unifidevices.USGs))
 	var devices []*Device
 	for _, sg := range unifidevices.USGs {
 		d := &Device{
-			Mac:    sg.Mac,
-			Site:   sg.SiteName,
-			Name:   sg.Name,
-			IP:     sg.ConfigNetwork.IP,
-			Type:   "USG",
-			Uplink: DevicePort{Mac: sg.Uplink.Mac, Port: sg.Uplink.PortIdx.String()},
+			Mac:           sg.Mac,
+			Site:          sg.SiteName,
+			Name:          sg.Name,
+			IP:            sg.IP,
+			Type:          "USG",
+			Uplink:        &DevicePort{Mac: sg.Uplink.Mac, Port: sg.Uplink.PortIdx.String()},
+			ConfigNetwork: sg.ConfigNetwork,
 		}
 		devices = append(devices, d)
 	}
+
+	fmt.Printf(",%d USWs", len(unifidevices.USWs))
 	for _, sw := range unifidevices.USWs {
 
 		d := &Device{
-			Mac:  sw.Mac,
-			Site: sw.SiteName,
-			Name: sw.Name,
-			IP:   sw.ConfigNetwork.IP,
-			Type: "USW",
+			Mac:           sw.Mac,
+			Site:          sw.SiteName,
+			Name:          sw.Name,
+			IP:            sw.IP,
+			Type:          "USW",
+			ConfigNetwork: sw.ConfigNetwork,
 		}
 		if val, ok := dlmap[sw.Mac]; ok {
 			d.Uplink = val
 		} else {
-			d.Uplink = DevicePort{Mac: sw.Uplink.Mac, Port: sw.Uplink.NumPort.String()}
+			d.Uplink = &DevicePort{Mac: sw.Uplink.Mac, Port: sw.Uplink.NumPort.String()}
 			d.Note += "root"
 		}
 
 		devices = append(devices, d)
 	}
+
+	fmt.Printf(", %d UAPs", len(unifidevices.UAPs))
 	for _, ap := range unifidevices.UAPs {
 		ul := dlmap[ap.Mac]
 		d := &Device{
 			Mac:    ap.Mac,
 			Site:   ap.SiteName,
 			Name:   ap.Name,
-			IP:     ap.ConfigNetwork.IP,
+			IP:     ap.IP,
 			Type:   "UAP",
 			Uplink: ul, //DevicePort{Mac: ap.Uplink.Mac, Port: strconv.Itoa(ap.Uplink.UplinkRemotePort)},
+			// ConfigNetwork: &unifi.ConfigNetwork{IP: ap.ConfigNetwork.IP, Type: ap.ConfigNetwork.Type},
+		}
+		if ap.ConfigNetwork != nil {
+			d.ConfigNetwork = ap.ConfigNetwork
 		}
 		devices = append(devices, d)
 	}
 
+	fmt.Printf(" and %d UXGs\n", len(unifidevices.UXGs))
 	for _, xg := range unifidevices.UXGs {
 		ul := dlmap[xg.Mac]
 		d := &Device{
 			Mac:    xg.Mac,
 			Site:   xg.SiteName,
 			Name:   xg.Name,
-			IP:     xg.ConfigNetwork.IP,
+			IP:     xg.IP,
 			Type:   "UXG",
 			Uplink: ul, //DevicePort{Mac: ap.Uplink.Mac, Port: strconv.Itoa(ap.Uplink.UplinkRemotePort)},
 		}
@@ -162,7 +175,7 @@ func deviceTable(devices []*Device) {
 
 	const padding = 3
 	w := tabwriter.NewWriter(os.Stdout, 10, 0, padding, ' ', 0)
-	fmt.Fprintln(w, "Mac\tType\tSite\tIP\tName\tNetwork\tUplink\tPort\tTBD\tNote\t")
+	fmt.Fprintln(w, "Mac\tType\tSite\tIP\tName\tNetwork\tUplink\tPort\tConfigIP\tNote\t")
 	template := "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t\n"
 	for _, d := range devices {
 		fmt.Fprintf(w, template,
@@ -172,7 +185,7 @@ func deviceTable(devices []*Device) {
 			"",
 			d.Uplink.Displayname(),
 			d.Uplink.Port,
-			"",
+			d.ConfigNetwork.IP,
 			d.Note,
 		)
 	}
