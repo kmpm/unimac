@@ -1,9 +1,11 @@
 ifeq ($(OS),Windows_NT)
 	FixPath = $(subst /,\,$1)
 	BINEXT = .exe
+	cp = copy $(1) $(2)
 else
 	FixPath = $1
 	BINEXT = 
+	cp = cp $1 $2
 endif
 
 OUTPUT:=unimac$(BINEXT)
@@ -12,9 +14,12 @@ LDFLAGS:="-X 'main.appVersion=$(GIT_VERSION)'"
 BUILDFLAGS:=-ldflags $(LDFLAGS)
 
 .PHONY: build
-build:
+build: out
 	go build $(BUILDFLAGS) -o $(OUTPUT) ./
+	$(call cp,$(OUTPUT),out/$(GIT_VERSION)-$(OUTPUT))
 
+out:
+	mkdir out
 
 $(OUTPUT): build
 
