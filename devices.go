@@ -175,7 +175,7 @@ func deviceTable(devices []*Device) {
 
 	const padding = 3
 	w := tabwriter.NewWriter(os.Stdout, 10, 0, padding, ' ', 0)
-	fmt.Fprintln(w, "Mac\tType\tSite\tIP\tName\tNetwork\tUplink\tPort\tConfigIP\tNote\t")
+	fmt.Fprintln(w, "Mac\tType\tSite\tIP\tName\tNetwork\tUplink\tUpPort\tConfigIP\tNote\t")
 	template := "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t\n"
 	for _, d := range devices {
 		fmt.Fprintf(w, template,
@@ -207,8 +207,8 @@ func devicesCsv(devices []*Device, filename string) {
 	record[4] = "Name"
 	record[5] = "Network"
 	record[6] = "Uplink"
-	record[7] = "Port"
-	record[8] = "TBD"
+	record[7] = "UpPort"
+	record[8] = "ConfigIP"
 	record[9] = "Note"
 	if err := w.Write(record); err != nil {
 		log.Fatalln(err)
@@ -217,7 +217,7 @@ func devicesCsv(devices []*Device, filename string) {
 		w.Write([]string{
 			d.Mac, d.Type, d.Site, d.IP, d.Name, "",
 			d.Uplink.Displayname(), d.Uplink.Port,
-			"",
+			d.ConfigNetwork.IP,
 			d.Note,
 		})
 	}
@@ -234,8 +234,8 @@ func devicesExcel(devices []*Device, filename string) {
 	f.SetCellValue(sname, "E1", "Name")
 	f.SetCellValue(sname, "F1", "Network")
 	f.SetCellValue(sname, "G1", "Uplink")
-	f.SetCellValue(sname, "H1", "Port")
-	f.SetCellValue(sname, "I1", "TBD")
+	f.SetCellValue(sname, "H1", "UpPort")
+	f.SetCellValue(sname, "I1", "ConfigIP")
 	f.SetCellValue(sname, "J1", "Note")
 	row := 2
 	for _, d := range devices {
@@ -247,7 +247,7 @@ func devicesExcel(devices []*Device, filename string) {
 		f.SetCellValue(sname, fmt.Sprintf("F%d", row), "")
 		f.SetCellValue(sname, fmt.Sprintf("G%d", row), d.Uplink.Displayname())
 		f.SetCellValue(sname, fmt.Sprintf("H%d", row), d.Uplink.Port)
-		f.SetCellValue(sname, fmt.Sprintf("I%d", row), "")
+		f.SetCellValue(sname, fmt.Sprintf("I%d", row), d.ConfigNetwork.IP)
 		f.SetCellValue(sname, fmt.Sprintf("J%d", row), d.Note)
 		row++
 	}
