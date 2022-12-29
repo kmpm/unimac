@@ -18,4 +18,4 @@ require (
 	golang.org/x/text v0.5.0 // indirect
 )
 
-replace github.com/unpoller/unifi => ../unifi
+replace github.com/unpoller/unifi => github.com/kmpm/unifi v0.0.0-20221228160502-6b09a931c779
