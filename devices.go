@@ -98,7 +98,7 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 		devices = append(devices, d)
 	}
 
-	fmt.Printf(",%d USWs", len(unifidevices.USWs))
+	fmt.Printf(", %d USWs", len(unifidevices.USWs))
 	for _, sw := range unifidevices.USWs {
 
 		d := &Device{
