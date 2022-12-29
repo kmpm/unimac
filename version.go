@@ -16,7 +16,7 @@ func printVersion() {
 }
 
 func versionRun(arguments []string) {
-	versionCmd.Parse(arguments)
+	check(versionCmd.Parse(arguments))
 	printVersion()
 
 }

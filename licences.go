@@ -75,7 +75,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.`
 }
 
 func licensesRun(arguments []string) {
-	licencesCmd.Parse(arguments)
+	check(licencesCmd.Parse(arguments))
 	printMIT("unimac", "2021 Peter Magnusson <me@kmpm.se>")
 	printDisclaimer("\n", "\n")
 

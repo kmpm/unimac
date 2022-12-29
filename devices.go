@@ -214,12 +214,13 @@ func devicesCsv(devices []*Device, filename string) {
 		log.Fatalln(err)
 	}
 	for _, d := range devices {
-		w.Write([]string{
+		err := w.Write([]string{
 			d.Mac, d.Type, d.Site, d.IP, d.Name, "",
 			d.Uplink.Displayname(), d.Uplink.Port,
 			d.ConfigNetwork.IP,
 			d.Note,
 		})
+		check(err)
 	}
 	w.Flush()
 }
@@ -227,28 +228,28 @@ func devicesCsv(devices []*Device, filename string) {
 func devicesExcel(devices []*Device, filename string) {
 	f := excelize.NewFile()
 	sname := f.GetSheetName(0)
-	f.SetCellValue(sname, "A1", "MAC")
-	f.SetCellValue(sname, "B1", "Type")
-	f.SetCellValue(sname, "C1", "Site")
-	f.SetCellValue(sname, "D1", "IP")
-	f.SetCellValue(sname, "E1", "Name")
-	f.SetCellValue(sname, "F1", "Network")
-	f.SetCellValue(sname, "G1", "Uplink")
-	f.SetCellValue(sname, "H1", "UpPort")
-	f.SetCellValue(sname, "I1", "ConfigIP")
-	f.SetCellValue(sname, "J1", "Note")
+	check(f.SetCellValue(sname, "A1", "MAC"))
+	check(f.SetCellValue(sname, "B1", "Type"))
+	check(f.SetCellValue(sname, "C1", "Site"))
+	check(f.SetCellValue(sname, "D1", "IP"))
+	check(f.SetCellValue(sname, "E1", "Name"))
+	check(f.SetCellValue(sname, "F1", "Network"))
+	check(f.SetCellValue(sname, "G1", "Uplink"))
+	check(f.SetCellValue(sname, "H1", "UpPort"))
+	check(f.SetCellValue(sname, "I1", "ConfigIP"))
+	check(f.SetCellValue(sname, "J1", "Note"))
 	row := 2
 	for _, d := range devices {
-		f.SetCellValue(sname, fmt.Sprintf("A%d", row), d.Mac)
-		f.SetCellValue(sname, fmt.Sprintf("B%d", row), d.Type)
-		f.SetCellValue(sname, fmt.Sprintf("C%d", row), d.Site)
-		f.SetCellValue(sname, fmt.Sprintf("D%d", row), d.IP)
-		f.SetCellValue(sname, fmt.Sprintf("E%d", row), d.Name)
-		f.SetCellValue(sname, fmt.Sprintf("F%d", row), "")
-		f.SetCellValue(sname, fmt.Sprintf("G%d", row), d.Uplink.Displayname())
-		f.SetCellValue(sname, fmt.Sprintf("H%d", row), d.Uplink.Port)
-		f.SetCellValue(sname, fmt.Sprintf("I%d", row), d.ConfigNetwork.IP)
-		f.SetCellValue(sname, fmt.Sprintf("J%d", row), d.Note)
+		check(f.SetCellValue(sname, fmt.Sprintf("A%d", row), d.Mac))
+		check(f.SetCellValue(sname, fmt.Sprintf("B%d", row), d.Type))
+		check(f.SetCellValue(sname, fmt.Sprintf("C%d", row), d.Site))
+		check(f.SetCellValue(sname, fmt.Sprintf("D%d", row), d.IP))
+		check(f.SetCellValue(sname, fmt.Sprintf("E%d", row), d.Name))
+		check(f.SetCellValue(sname, fmt.Sprintf("F%d", row), ""))
+		check(f.SetCellValue(sname, fmt.Sprintf("G%d", row), d.Uplink.Displayname()))
+		check(f.SetCellValue(sname, fmt.Sprintf("H%d", row), d.Uplink.Port))
+		check(f.SetCellValue(sname, fmt.Sprintf("I%d", row), d.ConfigNetwork.IP))
+		check(f.SetCellValue(sname, fmt.Sprintf("J%d", row), d.Note))
 		row++
 	}
 	if err := f.SaveAs(*deviceOutputFlag); err != nil {
