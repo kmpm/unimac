@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 Peter Magnusson <me@kmpm.se>
+#
+# SPDX-License-Identifier: CC0-1.0
 ifeq ($(OS),Windows_NT)
 	FixPath = $(subst /,\,$1)
 	BINEXT = .exe

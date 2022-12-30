@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2022 Peter Magnusson <me@kmpm.se>
+
+SPDX-License-Identifier: MIT
+-->
+
 # Unifi MAC address lists
 
 Unimac is a small command line program made for extracting
