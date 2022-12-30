@@ -5,6 +5,7 @@ SPDX-License-Identifier: MIT
 -->
 
 # Unifi MAC address lists
+[![Build](https://github.com/kmpm/unimac/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/kmpm/unimac/actions/workflows/build.yml)
 
 Unimac is a small command line program made for extracting
 basic information about devices and clients from Unifi Controllers.
