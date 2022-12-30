@@ -1,20 +1,26 @@
 ifeq ($(OS),Windows_NT)
 	FixPath = $(subst /,\,$1)
 	BINEXT = .exe
+	cp = copy $(1) $(2)
 else
 	FixPath = $1
 	BINEXT = 
+	cp = cp $1 $2
 endif
 
 OUTPUT:=unimac$(BINEXT)
 GIT_VERSION?=$(shell git describe --tags --always --long --dirty)
 LDFLAGS:="-X 'main.appVersion=$(GIT_VERSION)'"
 BUILDFLAGS:=-ldflags $(LDFLAGS)
+RELEASEFILE=$(call FixPath,out/unimac_$(GIT_VERSION)$(BINEXT))
 
 .PHONY: build
-build:
+build: out
 	go build $(BUILDFLAGS) -o $(OUTPUT) ./
+	$(call cp,$(OUTPUT),$(RELEASEFILE))
 
+out:
+	mkdir out
 
 $(OUTPUT): build
 
@@ -36,3 +42,6 @@ devices:
 clean:
 	-del $(OUTPUT)
 	
+today: out
+	go run ./ clients -output out/today/clients.xlsx
+	go run ./ devices -output out/today/devices.xlsx

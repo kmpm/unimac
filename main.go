@@ -51,12 +51,12 @@ func main() {
 	switch args[0] {
 	case "devices":
 		uni, sites := mustConnect()
-		devicesCmd.Parse(args[1:])
+		check(devicesCmd.Parse(args[1:]))
 		generateDevices(uni, sites)
 
 	case "clients":
 		uni, sites := mustConnect()
-		clientsCmd.Parse(args[1:])
+		check(clientsCmd.Parse(args[1:]))
 		generateClients(uni, sites)
 	case "version":
 		versionRun(args[1:])
