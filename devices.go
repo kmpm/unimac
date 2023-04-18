@@ -33,6 +33,12 @@ func (me *DevicePort) String() string {
 }
 
 func (me *DevicePort) Displayname() string {
+	// fmt.Printf("me %v\n", me)
+	// fmt.Printf("name %v\n", me.Name)
+	// fmt.Printf("mac %v\n", me.Mac)
+	if me == nil {
+		fmt.Println("nil")
+	}
 	if me.Name == "" {
 		return me.Mac
 	} else {
@@ -127,13 +133,16 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 	for _, ap := range unifidevices.UAPs {
 		ul := dlmap[ap.Mac]
 		d := &Device{
-			Mac:    ap.Mac,
-			Site:   ap.SiteName,
-			Name:   ap.Name,
-			IP:     ap.IP,
-			Type:   "UAP",
-			Uplink: ul, //DevicePort{Mac: ap.Uplink.Mac, Port: strconv.Itoa(ap.Uplink.UplinkRemotePort)},
+			Mac:  ap.Mac,
+			Site: ap.SiteName,
+			Name: ap.Name,
+			IP:   ap.IP,
+			Type: "UAP",
+			// Uplink: *ul, //DevicePort{Mac: ap.Uplink.Mac, Port: strconv.Itoa(ap.Uplink.UplinkRemotePort)},
 			// ConfigNetwork: &unifi.ConfigNetwork{IP: ap.ConfigNetwork.IP, Type: ap.ConfigNetwork.Type},
+		}
+		if ul != nil {
+			d.Uplink = ul
 		}
 		if ap.ConfigNetwork != nil {
 			d.ConfigNetwork = ap.ConfigNetwork
@@ -182,13 +191,19 @@ func deviceTable(devices []*Device) {
 	fmt.Fprintln(w, "Mac\tType\tSite\tIP\tName\tNetwork\tUplink\tUpPort\tConfigIP\tNote\t")
 	template := "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t\n"
 	for _, d := range devices {
+		ul_name := "nil"
+		ul_port := "nil"
+		if d.Uplink != nil {
+			ul_name = d.Uplink.Displayname()
+			ul_port = d.Uplink.Port
+		}
 		fmt.Fprintf(w, template,
 			d.Mac, d.Type, d.Site,
 			d.IP,
 			d.Name,
 			"",
-			d.Uplink.Displayname(),
-			d.Uplink.Port,
+			ul_name,
+			ul_port,
 			d.ConfigNetwork.IP,
 			d.Note,
 		)
@@ -218,10 +233,20 @@ func devicesCsv(devices []*Device, filename string) {
 		log.Fatalln(err)
 	}
 	for _, d := range devices {
+		ul_name := "nil"
+		ul_port := "nil"
+		if d.Uplink != nil {
+			ul_name = d.Uplink.Displayname()
+			ul_port = d.Uplink.Port
+		}
+		cfn_ip := "nil"
+		if d.ConfigNetwork != nil {
+			cfn_ip = d.ConfigNetwork.IP
+		}
 		err := w.Write([]string{
 			d.Mac, d.Type, d.Site, d.IP, d.Name, "",
-			d.Uplink.Displayname(), d.Uplink.Port,
-			d.ConfigNetwork.IP,
+			ul_name, ul_port,
+			cfn_ip,
 			d.Note,
 		})
 		check(err)
@@ -244,14 +269,20 @@ func devicesExcel(devices []*Device, filename string) {
 	check(f.SetCellValue(sname, "J1", "Note"))
 	row := 2
 	for _, d := range devices {
+		ul_name := "nil"
+		ul_port := "nil"
+		if d.Uplink != nil {
+			ul_name = d.Uplink.Displayname()
+			ul_port = d.Uplink.Port
+		}
 		check(f.SetCellValue(sname, fmt.Sprintf("A%d", row), d.Mac))
 		check(f.SetCellValue(sname, fmt.Sprintf("B%d", row), d.Type))
 		check(f.SetCellValue(sname, fmt.Sprintf("C%d", row), d.Site))
 		check(f.SetCellValue(sname, fmt.Sprintf("D%d", row), d.IP))
 		check(f.SetCellValue(sname, fmt.Sprintf("E%d", row), d.Name))
 		check(f.SetCellValue(sname, fmt.Sprintf("F%d", row), ""))
-		check(f.SetCellValue(sname, fmt.Sprintf("G%d", row), d.Uplink.Displayname()))
-		check(f.SetCellValue(sname, fmt.Sprintf("H%d", row), d.Uplink.Port))
+		check(f.SetCellValue(sname, fmt.Sprintf("G%d", row), ul_name))
+		check(f.SetCellValue(sname, fmt.Sprintf("H%d", row), ul_port))
 		check(f.SetCellValue(sname, fmt.Sprintf("I%d", row), d.ConfigNetwork.IP))
 		check(f.SetCellValue(sname, fmt.Sprintf("J%d", row), d.Note))
 		row++
