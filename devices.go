@@ -96,13 +96,16 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 	fmt.Printf("\t with %d USGs", len(unifidevices.USGs))
 	var devices []*Device
 	for _, sg := range unifidevices.USGs {
+
+		ul := &DevicePort{Mac: sg.Uplink.Mac, Port: sg.Uplink.PortIdx.String()}
+
 		d := &Device{
 			Mac:           sg.Mac,
 			Site:          sg.SiteName,
 			Name:          sg.Name,
 			IP:            sg.IP,
 			Type:          "USG",
-			Uplink:        &DevicePort{Mac: sg.Uplink.Mac, Port: sg.Uplink.PortIdx.String()},
+			Uplink:        ul,
 			ConfigNetwork: sg.ConfigNetwork,
 		}
 		devices = append(devices, d)
