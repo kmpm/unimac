@@ -283,7 +283,11 @@ func devicesExcel(devices []*Device, filename string) {
 		check(f.SetCellValue(sname, fmt.Sprintf("F%d", row), ""))
 		check(f.SetCellValue(sname, fmt.Sprintf("G%d", row), ul_name))
 		check(f.SetCellValue(sname, fmt.Sprintf("H%d", row), ul_port))
-		check(f.SetCellValue(sname, fmt.Sprintf("I%d", row), d.ConfigNetwork.IP))
+		if d.ConfigNetwork != nil {
+			check(f.SetCellValue(sname, fmt.Sprintf("I%d", row), d.ConfigNetwork.IP))
+		} else {
+			check(f.SetCellValue(sname, fmt.Sprintf("I%d", row), "nil"))
+		}
 		check(f.SetCellValue(sname, fmt.Sprintf("J%d", row), d.Note))
 		row++
 	}
