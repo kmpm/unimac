@@ -120,14 +120,14 @@ func hydrateClient(client *unifi.Client, switchmap map[string]*unifi.USW, apmap 
 			client.SwName = sw.Name
 		} else {
 			// panic(fmt.Errorf("no switch found for %s", client.SwMac))
-			client.SwName = "not found"
+			client.SwName = client.SwMac
 		}
 	}
 	if client.ApMac != "" {
 		if ap, ok := apmap[client.ApMac]; ok {
 			client.ApName = ap.Name
 		} else {
-			client.ApName = "not found"
+			client.ApName = client.ApMac
 		}
 	}
 }
