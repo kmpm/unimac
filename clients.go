@@ -112,13 +112,23 @@ func generateClients(uni *unifi.Unifi, sites []*unifi.Site) {
 }
 
 func hydrateClient(client *unifi.Client, switchmap map[string]*unifi.USW, apmap map[string]*unifi.UAP) {
+	if client == nil {
+		panic("client is nil")
+	}
 	if client.SwMac != "" {
-		sw := switchmap[client.SwMac]
-		client.SwName = sw.Name
+		if sw, ok := switchmap[client.SwMac]; ok {
+			client.SwName = sw.Name
+		} else {
+			// panic(fmt.Errorf("no switch found for %s", client.SwMac))
+			client.SwName = "not found"
+		}
 	}
 	if client.ApMac != "" {
-		ap := apmap[client.ApMac]
-		client.ApName = ap.Name
+		if ap, ok := apmap[client.ApMac]; ok {
+			client.ApName = ap.Name
+		} else {
+			client.ApName = "not found"
+		}
 	}
 }
 
@@ -147,7 +157,7 @@ func getClientValue(client *unifi.Client, name string) string {
 	case CLIENT_SITE:
 		return client.SiteName
 	case CLIENT_LASTSEEN:
-		return time.Unix(client.LastSeen, 0).Format("2006-01-02 15:04:05")
+		return time.Unix(int64(client.LastSeen.Val), 0).Format("2006-01-02 15:04:05")
 	default:
 		return "#UNSUPPORTED"
 	}
@@ -213,7 +223,7 @@ func clientExcel(out io.Writer, clients []*unifi.Client, switchmap map[string]*u
 		check(f.SetCellValue(sname, cns[CLIENT_SWPORT](row), client.SwPort.Val))
 		check(f.SetCellValue(sname, cns[CLIENT_AP](row), client.ApName))
 		check(f.SetCellValue(sname, cns[CLIENT_RSSI](row), client.Rssi))
-		check(f.SetCellValue(sname, cns[CLIENT_LASTSEEN](row), time.Unix(client.LastSeen, 0)))
+		check(f.SetCellValue(sname, cns[CLIENT_LASTSEEN](row), getClientValue(client, CLIENT_LASTSEEN)))
 		check(f.SetCellValue(sname, cns[CLIENT_NOTE](row), client.Note))
 
 		// fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t\n",
