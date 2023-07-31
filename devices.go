@@ -58,7 +58,6 @@ type Device struct {
 }
 
 func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
-	debug := false
 	unifidevices, err := uni.GetDevices(sites)
 	if err != nil {
 		log.Fatalln("Error:", err)
@@ -94,33 +93,22 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 	// 	clientmap[cl.Mac] = cl
 	// }
 	var devices []*Device
+	before := len(devices)
+	fmt.Printf("\t with %d USGs", len(unifidevices.USGs))
+	withUSGs(unifidevices, &devices)
+	fmt.Printf(" added %d \n", len(devices)-before)
 
-	withUSGs(unifidevices, devices, debug)
+	before = len(devices)
+	fmt.Printf("\t with %d USWs", len(unifidevices.USWs))
+	withUSWs(unifidevices, &devices, dlmap)
+	fmt.Printf(" added %d\n", len(devices)-before)
 
-	withUSWs(unifidevices, devices, debug, dlmap)
+	fmt.Printf("\t with %d UAPs", len(unifidevices.UAPs))
+	before = len(devices)
+	withUAPs(unifidevices, &devices, dlmap)
+	fmt.Printf(" added %d\n", len(devices)-before)
 
-	fmt.Printf(", %d UAPs", len(unifidevices.UAPs))
-	for _, ap := range unifidevices.UAPs {
-		ul := dlmap[ap.Mac]
-		d := &Device{
-			Mac:  ap.Mac,
-			Site: ap.SiteName,
-			Name: ap.Name,
-			IP:   ap.IP,
-			Type: "UAP",
-			// Uplink: *ul, //DevicePort{Mac: ap.Uplink.Mac, Port: strconv.Itoa(ap.Uplink.UplinkRemotePort)},
-			// ConfigNetwork: &unifi.ConfigNetwork{IP: ap.ConfigNetwork.IP, Type: ap.ConfigNetwork.Type},
-		}
-		if ul != nil {
-			d.Uplink = ul
-		}
-		if ap.ConfigNetwork != nil {
-			d.ConfigNetwork = ap.ConfigNetwork
-		}
-		devices = append(devices, d)
-	}
-
-	fmt.Printf(" and %d UXGs\n", len(unifidevices.UXGs))
+	fmt.Printf("\t with %d UXGs\n", len(unifidevices.UXGs))
 	for _, xg := range unifidevices.UXGs {
 		ul := dlmap[xg.Mac]
 		d := &Device{
@@ -154,9 +142,9 @@ func generateDevices(uni *unifi.Unifi, sites []*unifi.Site) {
 	}
 }
 
-func withUSGs(unifidevices *unifi.Devices, devices []*Device, debug bool) {
-	fmt.Printf("\t with %d USGs", len(unifidevices.USGs))
-	for i, sg := range unifidevices.USGs {
+func withUSGs(unifidevices *unifi.Devices, devices *[]*Device) {
+
+	for _, sg := range unifidevices.USGs {
 		if sg == nil {
 			continue
 		}
@@ -171,17 +159,14 @@ func withUSGs(unifidevices *unifi.Devices, devices []*Device, debug bool) {
 			Uplink:        ul,
 			ConfigNetwork: sg.ConfigNetwork,
 		}
-		if debug {
-			log.Printf("sg[%d]: %v\n\n", i, sg)
-		}
-		devices = append(devices, d)
+
+		*devices = append(*devices, d)
 	}
 }
 
-func withUSWs(unifidevices *unifi.Devices, devices []*Device, debug bool, dlmap map[string]*DevicePort) {
-	fmt.Printf(", %d USWs", len(unifidevices.USWs))
-	for i, sw := range unifidevices.USWs {
+func withUSWs(unifidevices *unifi.Devices, devices *[]*Device, dlmap map[string]*DevicePort) {
 
+	for _, sw := range unifidevices.USWs {
 		d := &Device{
 			Mac:           sw.Mac,
 			Site:          sw.SiteName,
@@ -191,10 +176,6 @@ func withUSWs(unifidevices *unifi.Devices, devices []*Device, debug bool, dlmap 
 			ConfigNetwork: sw.ConfigNetwork,
 		}
 
-		if debug {
-			log.Printf("sw[%d]: %v\n", i, sw)
-		}
-
 		if val, ok := dlmap[sw.Mac]; ok {
 			d.Uplink = val
 		} else {
@@ -202,7 +183,29 @@ func withUSWs(unifidevices *unifi.Devices, devices []*Device, debug bool, dlmap 
 			d.Note += "root"
 		}
 
-		devices = append(devices, d)
+		*devices = append(*devices, d)
+	}
+}
+
+func withUAPs(unifidevices *unifi.Devices, devices *[]*Device, dlmap map[string]*DevicePort) {
+	for _, ap := range unifidevices.UAPs {
+		ul := dlmap[ap.Mac]
+		d := &Device{
+			Mac:  ap.Mac,
+			Site: ap.SiteName,
+			Name: ap.Name,
+			IP:   ap.IP,
+			Type: "UAP",
+			// Uplink: *ul, //DevicePort{Mac: ap.Uplink.Mac, Port: strconv.Itoa(ap.Uplink.UplinkRemotePort)},
+			// ConfigNetwork: &unifi.ConfigNetwork{IP: ap.ConfigNetwork.IP, Type: ap.ConfigNetwork.Type},
+		}
+		if ul != nil {
+			d.Uplink = ul
+		}
+		if ap.ConfigNetwork != nil {
+			d.ConfigNetwork = ap.ConfigNetwork
+		}
+		*devices = append(*devices, d)
 	}
 }
 
