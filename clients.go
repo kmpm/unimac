@@ -151,7 +151,7 @@ func getClientValue(client *unifi.Client, name string) string {
 	case CLIENT_AP:
 		return client.ApName
 	case CLIENT_RSSI:
-		return fmt.Sprintf("%d", client.Rssi)
+		return fmt.Sprintf("%f", client.Rssi.Val)
 	case CLIENT_NOTE:
 		return client.Note
 	case CLIENT_SITE:
