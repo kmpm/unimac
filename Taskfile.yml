@@ -1,0 +1,43 @@
+# https://taskfile.dev
+# SPDX-FileCopyrightText: 2025 Peter Magnusson <me@kmpm.se>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+version: '3'
+
+vars:
+  VERSION: 
+    sh: git describe --tags --always --dirty
+  COMMIT: 
+    sh: git rev-parse HEAD
+  BUILDTIME: 
+    sh: git log -1 --format=%cI
+  GREETING: Hello, World!
+  LDFLAGS: >
+    -s -w
+    -X "main.Version={{.VERSION}}"
+    -X "main.BuildTime={{.BUILDTIME}}"
+    -X "main.Commit={{.COMMIT}}"
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+
+  build:
+    desc: Build the unimac binary
+    cmds:
+      - go build -ldflags '{{.LDFLAGS}}' -o ./dist/ ./cmd/...
+    
+  run:
+    desc: Run unimac
+    cmds:
+      - go run -ldflags '{{.LDFLAGS}}' ./cmd/unimac/ {{.CLI_ARGS}}
+    
+
+  tidy:
+    desc: Run go mod tidy
+    cmds:
+      - go fmt ./...
+      - go mod tidy

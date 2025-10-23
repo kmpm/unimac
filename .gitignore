@@ -10,3 +10,4 @@
 .env
 .vscode/
 out/
+dist/
