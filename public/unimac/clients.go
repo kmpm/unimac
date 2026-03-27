@@ -5,16 +5,12 @@
 package unimac
 
 import (
-	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"text/tabwriter"
 	"time"
 
 	"github.com/unpoller/unifi"
-	"github.com/xuri/excelize/v2"
 )
 
 const (
@@ -30,13 +26,51 @@ const (
 	CLIENT_NOTE     = "Note"
 	CLIENT_SITE     = "Site"
 	CLIENT_LASTSEEN = "Last Seen"
+	CLIENT_OUI      = "OUI"
+	CLIENT_OS       = "OS"
+	CLIENT_OS_CLASS = "OS Class"
 )
 
 var (
 	client_fields = []string{
 		CLIENT_MAC, CLIENT_IP, CLIENT_HOSTNAME, CLIENT_NAME,
+		CLIENT_OUI, CLIENT_OS, CLIENT_OS_CLASS,
 		CLIENT_SITE, CLIENT_NETWORK, CLIENT_SWITCH, CLIENT_SWPORT,
 		CLIENT_AP, CLIENT_RSSI, CLIENT_LASTSEEN, CLIENT_NOTE,
+	}
+	// 87, 15 - Vyos routern
+	os_name_map = map[int]string{
+		0:  "Unidentified",
+		1:  "Others",
+		3:  "Linux",
+		12: "Mac OS X",
+		18: "Windows",
+		24: "iPhone",
+		25: "Apple IOS",
+		56: "Android",
+		68: "Raspbian",
+		87: "Vyos ?",
+	}
+
+	os_class_map = map[int]map[int]string{
+		0: {
+			0: "Unidentified",
+		},
+		12: {
+			7: "Apple MacBook",
+		},
+		18: {
+			15: "HP Laptop",
+		},
+		24: {
+			16: "Apple iPhone 14 Pro Max",
+		},
+		25: {
+			16: "Apple iPhone",
+		},
+		87: {
+			15: "Vyos Router?",
+		},
 	}
 )
 
@@ -136,137 +170,4 @@ func getClientValue(client *unifi.Client, name string) string {
 	default:
 		return "#UNSUPPORTED"
 	}
-}
-
-func ClientJSON(out io.Writer, filename string, clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap map[string]*unifi.UAP) error {
-	data, err := json.MarshalIndent(clients, "", "    ")
-	if err != nil {
-		return fmt.Errorf("error marshalling to JSON %v", err)
-	}
-	_, err = out.Write(data)
-	if err != nil {
-		return fmt.Errorf("error writing JSON to output %v", err)
-	}
-	return nil
-}
-
-// clientTable outputs on screen in table format
-func ClientTable(out io.Writer, filename string, clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap map[string]*unifi.UAP) error {
-	const padding = 3
-	w := tabwriter.NewWriter(out, 10, 0, padding, ' ', 0)
-	header := ""
-	format := ""
-	for _, field := range client_fields {
-		header += field + "\t"
-		format += "%s\t"
-	}
-	format += "\n"
-	fmt.Println("header", header)
-	fmt.Println("format", format)
-	fmt.Fprintln(w, header)
-
-	values := make([]any, len(client_fields))
-	for _, client := range clients {
-		hydrateClient(client, switchmap, apmap)
-		for i, field := range client_fields {
-			values[i] = getClientValue(client, field)
-		}
-		fmt.Fprintf(w, format, values...)
-	}
-	w.Flush()
-	return nil
-}
-
-// clientExcel outputs to .xslx -file
-func ClientExcel(out io.Writer, filename string, clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap map[string]*unifi.UAP) error {
-	f := excelize.NewFile()
-	// index := f.NewSheet("Sheet1")
-
-	cns := getColumns(client_fields...)
-
-	sname := f.GetSheetName(0)
-	for _, field := range client_fields {
-		if err := f.SetCellValue(sname, cns[field](1), field); err != nil {
-			return fmt.Errorf("error setting cell value: %w", err)
-		}
-	}
-
-	row := 2
-	for _, client := range clients {
-		hydrateClient(client, switchmap, apmap)
-		r := &runner{}
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_MAC](row), client.Mac)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_IP](row), client.IP)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_HOSTNAME](row), client.Hostname)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_NAME](row), client.Name)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_SITE](row), client.SiteName)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_NETWORK](row), client.Network)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_SWITCH](row), client.SwName)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_SWPORT](row), client.SwPort.Val)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_AP](row), client.ApName)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_RSSI](row), client.Rssi)
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_LASTSEEN](row), getClientValue(client, CLIENT_LASTSEEN))
-		})
-		r.run(func() error {
-			return f.SetCellValue(sname, cns[CLIENT_NOTE](row), client.Note)
-		})
-		if r.err != nil {
-			return fmt.Errorf("error setting cell value row %d: %w", row, r.err)
-		}
-
-		// fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t\n",
-		// 	client.Mac, client.IP, client.Hostname, client.Name,
-		// 	client.SwName, &client.SwPort,
-		// 	client.ApName, client.Rssi,
-		// 	client.Note)
-		row++
-	}
-	if err := f.SaveAs(filename); err != nil {
-		return fmt.Errorf("error saving xlsx file: %w", err)
-	}
-	return nil
-}
-
-func ClientCsv(out io.Writer, filename string, clients []*unifi.Client, switchmap map[string]*unifi.USW, apmap map[string]*unifi.UAP) error {
-
-	w := csv.NewWriter(out)
-	record := make([]string, len(client_fields))
-	copy(record, client_fields)
-
-	if err := w.Write(record); err != nil {
-		return fmt.Errorf("error writing CSV header: %w", err)
-	}
-	for _, client := range clients {
-		hydrateClient(client, switchmap, apmap)
-		for i, field := range client_fields {
-			record[i] = getClientValue(client, field)
-		}
-
-		if err := w.Write(record); err != nil {
-			return fmt.Errorf("error writing CSV record: %w", err)
-		}
-	}
-	w.Flush()
-	return nil
 }
