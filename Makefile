@@ -19,7 +19,7 @@ RELEASEFILE=$(call FixPath,out/unimac_$(GIT_VERSION)$(BINEXT))
 
 .PHONY: build
 build: out
-	go build $(BUILDFLAGS) -o $(OUTPUT) ./
+	go build $(BUILDFLAGS) -o $(OUTPUT) ./cmd/unimac/
 	$(call cp,$(OUTPUT),$(RELEASEFILE))
 
 out:
@@ -34,11 +34,11 @@ version:
 
 
 clients:
-	go run ./ clients -output clients.csv
+	go run ./cmd/unimac clients -output clients.xlsx
 
 
 devices:
-	go run ./ devices -output devices.csv
+	go run ./cmd/unimac devices -output devices.csv
 
 
 .PHONY: clean
