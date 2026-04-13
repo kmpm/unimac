@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/kmpm/unimac/public/unimac"
-	"github.com/unpoller/unifi"
+	"github.com/unpoller/unifi/v5"
 )
 
 const (

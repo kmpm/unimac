@@ -7,7 +7,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/unpoller/unifi"
+	"github.com/unpoller/unifi/v5"
 	"github.com/xuri/excelize/v2"
 )
 
